@@ -21,6 +21,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
+            sudo chown -R the-enc:the-enc storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
             cd /var/www/laravel-action || exit 1
             if [ -f ".git/index.lock" ]; then
                 sudo rm -f .git/index.lock

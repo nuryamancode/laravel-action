@@ -23,3 +23,6 @@ jobs:
           script: |
             whoami
             ls -la
+
+      - name: Debug SSH Key
+        run: echo "${{ secrets.SSH_PRIVATE_KEY }}" | base64

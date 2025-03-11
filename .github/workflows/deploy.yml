@@ -22,6 +22,8 @@ jobs:
           port: 22
           script: |
             cd /var/www/laravel-action || exit 1
+            sudo chown -R www-data:www-data .  
+            sudo chmod -R 775 storage bootstrap/cache
             git reset --hard
             git clean -fd
             git pull origin main || { echo "Gagal pull dari GitHub"; exit 1; }

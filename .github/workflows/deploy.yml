@@ -47,7 +47,7 @@ jobs:
             sudo chmod -R 775 storage bootstrap/cache
 
             # 7️⃣ Install dependencies
-            composer install --no-dev --optimize-autoloader || { echo "Composer install gagal"; exit 1; }
+            composer install|| { echo "Composer install gagal"; exit 1; }
 
             # 8️⃣ Jalankan migrasi database (pastikan database sudah dikonfigurasi dengan benar)
             php artisan migrate --force || { echo "Migrasi database gagal"; exit 1; }

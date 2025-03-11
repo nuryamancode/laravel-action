@@ -21,17 +21,20 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
+            sudo chown -R www-data:www-data /var/www/laravel-action
+            sudo chmod -R 775 /var/www/laravel-action
             cd /var/www/laravel-action || exit 1
-            sudo chown -R www-data:www-data .  
-            sudo chmod -R 775 storage bootstrap/cache
+            if [ -f ".git/index.lock" ]; then
+                sudo rm -f .git/index.lock
+            fi
+            sudo chown -R $(whoami):$(whoami) .git
+            sudo chmod -R 775 .git
             git reset --hard
             git clean -fd
             git pull origin main || { echo "Gagal pull dari GitHub"; exit 1; }
             composer install --no-dev --optimize-autoloader || { echo "Composer install gagal"; exit 1; }
             php artisan migrate --force || { echo "Migrasi database gagal"; exit 1; }
-            php artisan config:cache || { echo "Gagal cache config"; exit 1; }
-            php artisan route:cache || { echo "Gagal cache route"; exit 1; }
-            php artisan view:cache || { echo "Gagal cache view"; exit 1; }
             sudo systemctl restart nginx || { echo "Restart Nginx gagal"; exit 1; }
             echo "Deploy berhasil!"
+
 

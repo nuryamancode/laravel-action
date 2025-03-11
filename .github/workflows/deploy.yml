@@ -23,32 +23,17 @@ jobs:
           script: |
             sudo -i <<EOF
             cd /var/www/laravel-action || exit 1
-
-            # Pastikan direktori storage dan cache ada
             mkdir -p storage/logs bootstrap/cache
-
-            # Perbaiki izin file
             sudo chown -R the-enc:the-enc storage bootstrap/cache
             sudo chmod -R 775 storage bootstrap/cache
             sudo chown -R www-data:www-data storage bootstrap/cache
-
-            # Hapus file yang terkunci di Git
             if [ -f ".git/index.lock" ]; then
                 sudo rm -f .git/index.lock
             fi
-
-            # Reset dan pull ulang dari GitHub
             git reset --hard
             git clean -fd
             git pull origin main || { echo "Gagal pull dari GitHub"; exit 1; }
-
-            # Install dependensi dan jalankan Laravel
             composer install || { echo "Composer install gagal"; exit 1; }
             php artisan migrate || { echo "Migrasi database gagal"; exit 1; }
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-
-            # Restart server
             sudo systemctl restart nginx || { echo "Restart Nginx gagal"; exit 1; }
             EOF

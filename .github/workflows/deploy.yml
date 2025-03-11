@@ -21,11 +21,15 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            cd /var/www/laravel-action
-            git pull origin main
-            composer install --no-dev --optimize-autoloader
-            php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-            sudo systemctl restart nginx
+            cd /var/www/laravel-action || exit 1
+            git reset --hard
+            git clean -fd
+            git pull origin main || { echo "Gagal pull dari GitHub"; exit 1; }
+            composer install --no-dev --optimize-autoloader || { echo "Composer install gagal"; exit 1; }
+            php artisan migrate --force || { echo "Migrasi database gagal"; exit 1; }
+            php artisan config:cache || { echo "Gagal cache config"; exit 1; }
+            php artisan route:cache || { echo "Gagal cache route"; exit 1; }
+            php artisan view:cache || { echo "Gagal cache view"; exit 1; }
+            sudo systemctl restart nginx || { echo "Restart Nginx gagal"; exit 1; }
+            echo "Deploy berhasil!"
+

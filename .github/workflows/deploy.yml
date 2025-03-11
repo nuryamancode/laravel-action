@@ -21,62 +21,34 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            # Pindah ke direktori proyek Laravel
+            sudo -i <<EOF
             cd /var/www/laravel-action || exit 1
 
-            # Pastikan direktori storage dan bootstrap/cache ada
+            # Pastikan direktori storage dan cache ada
             mkdir -p storage/logs bootstrap/cache
 
-            # Ubah kepemilikan proyek ke user the-enc
-            sudo chown -R the-enc:the-enc /var/www/laravel-action
-
-            # Atur izin agar Laravel bisa menulis ke storage dan cache
+            # Perbaiki izin file
+            sudo chown -R the-enc:the-enc storage bootstrap/cache
             sudo chmod -R 775 storage bootstrap/cache
-
-            # Pastikan web server (Nginx/Apache) bisa mengakses storage dan cache
             sudo chown -R www-data:www-data storage bootstrap/cache
 
-            # Hapus file log yang bermasalah dan buat ulang dengan izin yang benar
-            sudo rm -f storage/logs/laravel.log
-            touch storage/logs/laravel.log
-            sudo chmod 666 storage/logs/laravel.log
-
-            # Pastikan tidak ada file yang terkunci di Git
+            # Hapus file yang terkunci di Git
             if [ -f ".git/index.lock" ]; then
                 sudo rm -f .git/index.lock
             fi
 
-            # Setel ulang kepemilikan Git agar bisa menarik update
-            sudo chown -R the-enc:www-data .git
-            sudo chmod -R 775 .git
-
-            # Reset perubahan lokal dan bersihkan file yang tidak diperlukan
+            # Reset dan pull ulang dari GitHub
             git reset --hard
             git clean -fd
             git pull origin main || { echo "Gagal pull dari GitHub"; exit 1; }
 
-            # Pastikan izin storage dan cache tetap benar setelah pull
-            sudo chown -R www-data:www-data storage bootstrap/cache
-            sudo chmod -R 775 storage bootstrap/cache
-
-            # Install dependensi Laravel
+            # Install dependensi dan jalankan Laravel
             composer install || { echo "Composer install gagal"; exit 1; }
-
-            # Jalankan migrasi database
             php artisan migrate || { echo "Migrasi database gagal"; exit 1; }
-
-            # Bersihkan cache Laravel
-            php artisan cache:clear
-            php artisan config:clear
-            php artisan route:clear
-            php artisan view:clear
-
-            # Buat ulang cache konfigurasi
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
 
-            # Restart web server agar perubahan diterapkan
+            # Restart server
             sudo systemctl restart nginx || { echo "Restart Nginx gagal"; exit 1; }
-
-            echo "Deploy Laravel berhasil!"
+            EOF

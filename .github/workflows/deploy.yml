@@ -42,7 +42,7 @@ jobs:
             git clean -fd
             git pull origin main || { echo "Gagal pull dari GitHub"; exit 1; }
 
-            # 6️⃣ Pastikan storage & cache bisa diakses oleh Laravel
+            # 6️⃣ 🔥 PERBAIKAN: Pastikan Laravel bisa menulis ke storage dan cache
             sudo chown -R www-data:www-data storage bootstrap/cache
             sudo chmod -R 775 storage bootstrap/cache
 

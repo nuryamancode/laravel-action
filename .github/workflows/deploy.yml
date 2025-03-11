@@ -21,20 +21,43 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            sudo chown -R www-data:www-data /var/www/laravel-action
+            # 1️⃣ Pastikan direktori dimiliki oleh user yang benar
+            sudo chown -R the-enc:www-data /var/www/laravel-action
             sudo chmod -R 775 /var/www/laravel-action
+            
+            # 2️⃣ Masuk ke direktori proyek Laravel
             cd /var/www/laravel-action || exit 1
+
+            # 3️⃣ Hapus file index.lock jika ada (untuk menghindari error saat git pull)
             if [ -f ".git/index.lock" ]; then
                 sudo rm -f .git/index.lock
             fi
-            sudo chown -R $(whoami):$(whoami) .git
+
+            # 4️⃣ Berikan hak akses ke folder .git agar bisa pull dari GitHub
+            sudo chown -R the-enc:www-data .git
             sudo chmod -R 775 .git
+
+            # 5️⃣ Reset perubahan lokal agar tidak bentrok dengan pull
             git reset --hard
             git clean -fd
             git pull origin main || { echo "Gagal pull dari GitHub"; exit 1; }
+
+            # 6️⃣ Pastikan storage & cache bisa diakses oleh Laravel
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+
+            # 7️⃣ Install dependencies
             composer install --no-dev --optimize-autoloader || { echo "Composer install gagal"; exit 1; }
+
+            # 8️⃣ Jalankan migrasi database (pastikan database sudah dikonfigurasi dengan benar)
             php artisan migrate --force || { echo "Migrasi database gagal"; exit 1; }
+
+            # 9️⃣ Bersihkan dan cache ulang konfigurasi Laravel
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # 🔟 Restart Nginx agar perubahan diterapkan
             sudo systemctl restart nginx || { echo "Restart Nginx gagal"; exit 1; }
-            echo "Deploy berhasil!"
 
-
+            echo "🚀 Deploy Laravel ke VPS berhasil!"
